@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ПДД Знаки РФ</title>
+  <script src="data.js"></script>
+  <style>
+    /* Базовый сброс и переменные темы */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg: #FFFFFF;
+      --card-bg: #FFFFFF;
+      --surface: #F9FAFB;
+      --surface-hover: #F4F4F5;
+      --border: #E4E4E7;
+      --border-dark: #D4D4D8;
+      --text: #09090B;
+      --text-muted: #71717A;
+      --text-subtle: #A1A1AA;
+      --black: #18181B;
+      --black-active: #000000;
+      --success: #16A34A;
+      --success-bg: #F0FDF4;
+      --success-border: #86EFAC;
+      --danger: #DC2626;
+      --danger-bg: #FEF2F2;
+      --danger-border: #FCA5A5;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 18px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      touch-action: manipulation;
+    }
+
+    /* Основная оболочка приложения */
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    /* Шапка */
+    .top-header {
+      flex-shrink: 0;
+      height: calc(52px + var(--safe-top));
+      padding-top: var(--safe-top);
+      padding-left: 16px;
+      padding-right: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 30;
+    }
+
+    .app-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .quick-stats-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--surface-hover);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    /* Экраны */
+    .screen {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      display: none;
+      flex-direction: column;
+      padding: 14px 16px;
+      overscroll-behavior-y: contain;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* ========================================================
+       НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (BOTTOM BAR)
+       ======================================================== */
+    .bottom-nav {
+      flex-shrink: 0;
+      display: flex;
+      border-top: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding-bottom: max(8px, var(--safe-bottom));
+      padding-top: 6px;
+      z-index: 40;
+    }
+
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: var(--text-subtle);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      padding: 4px 0;
+      transition: color 0.15s ease;
+    }
+
+    .nav-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 2;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    .nav-btn.active {
+      color: var(--black);
+    }
+
+    /* ========================================================
+       ЭКРАН 1: ВИКТОРИНА
+       ======================================================== */
+    .quiz-mode-selector {
+      display: flex;
+      background: var(--surface-hover);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 7px 0;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      background: transparent;
+      border: none;
+      border-radius: 10px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mode-tab.active {
+      background: #FFFFFF;
+      color: var(--black);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Карточка с изображением знака */
+    .sign-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 160px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+      margin-bottom: 14px;
+      position: relative;
+    }
+
+    .sign-image {
+      max-width: 140px;
+      max-height: 140px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06));
+    }
+
+    .sign-revealed-id {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--black);
+      display: none;
+    }
+
+    /* Варианты ответов (Тест) */
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin-bottom: 14px;
+    }
+
+    .option-btn {
+      width: 100%;
+      min-height: 52px;
+      padding: 10px 14px;
+      background: #FFFFFF;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.35;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.15s, background-color 0.15s, transform 0.08s;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .option-btn:active {
+      transform: scale(0.985);
+      background: var(--surface-hover);
+    }
+
+    .option-pill {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--surface-hover);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .option-text {
+      flex: 1;
+    }
+
+    .option-btn.correct {
+      border-color: var(--success);
+      background-color: var(--success-bg);
+      color: #14532D;
+      font-weight: 600;
+    }
+
+    .option-btn.correct .option-pill {
+      background: var(--success);
+      color: #FFFFFF;
+      border-color: var(--success);
+    }
+
+    .option-btn.wrong {
+      border-color: var(--danger);
+      background-color: var(--danger-bg);
+      color: #7F1D1D;
+    }
+
+    .option-btn.wrong .option-pill {
+      background: var(--danger);
+      color: #FFFFFF;
+      border-color: var(--danger);
+    }
+
+    /* Кнопка "Далее" */
+    .action-next-btn {
+      width: 100%;
+      height: 48px;
+      background: var(--black);
+      color: #FFFFFF;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .action-next-btn:active {
+      background: var(--black-active);
+      transform: scale(0.985);
+    }
+
+    /* Элементы режима Карточки */
+    .flashcard-answer-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    .flashcard-name {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.35;
+      margin-top: 6px;
+    }
+
+    .flashcard-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .fc-btn {
+      flex: 1;
+      height: 48px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .fc-btn-reveal {
+      width: 100%;
+      background: var(--black);
+      color: #FFFFFF;
+    }
+
+    .fc-btn-wrong {
+      background: #FFFFFF;
+      border: 1.5px solid var(--danger-border);
+      color: var(--danger);
+    }
+
+    .fc-btn-know {
+      background: var(--black);
+      color: #FFFFFF;
+    }
+
+    /* ========================================================
+       ЭКРАН 2: СПРАВОЧНИК СО ВСЕМИ ЗНАКАМИ
+       ======================================================== */
+    .catalog-search-wrap {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      padding-bottom: 10px;
+      z-index: 20;
+    }
+
+    .search-input-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input-box svg {
+      position: absolute;
+      left: 12px;
+      width: 18px;
+      height: 18px;
+      stroke: var(--text-subtle);
+    }
+
+    .search-input {
+      width: 100%;
+      height: 42px;
+      padding-left: 38px;
+      padding-right: 36px;
+      font-size: 16px; /* Защита от авто-зума на iOS */
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+      font-family: inherit;
+    }
+
+    .search-input:focus {
+      border-color: var(--black);
+      background: #FFFFFF;
+    }
+
+    .search-clear-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      padding: 6px;
+      color: var(--text-subtle);
+      font-size: 16px;
+      display: none;
+      cursor: pointer;
+    }
+
+    /* Фильтр-чипсы категорий */
+    .chips-scroll {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 6px 0 2px 0;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .chips-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip-btn {
+      flex-shrink: 0;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .chip-btn.active {
+      background: var(--black);
+      border-color: var(--black);
+      color: #FFFFFF;
+    }
+
+    /* Список карточек знаков */
+    .signs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 24px;
+    }
+
+    .sign-list-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--card-bg);
+      cursor: pointer;
+      transition: background-color 0.1s, transform 0.08s;
+    }
+
+    .sign-list-item:active {
+      transform: scale(0.99);
+      background: var(--surface-hover);
+    }
+
+    .sign-thumb-box {
+      width: 54px;
+      height: 54px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 4px;
+    }
+
+    .sign-thumb {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .sign-info-box {
+      flex: 1;
+      min-width: 0; /* предотвращает распирание flex-элемента */
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .sign-info-top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sign-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--black);
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+    }
+
+    .sign-name-text {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--text);
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    /* ========================================================
+       ЭКРАН 3: ТЕМЫ И СТАТИСТИКА
+       ======================================================== */
+    .settings-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin: 16px 0 10px 0;
+    }
+
+    .topics-header-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .sub-action-btn {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--black);
+      background: none;
+      border: none;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .category-toggle-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+
+    .category-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .category-count {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    /* Переключатель в стиле iOS */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--border-dark);
+      transition: .2s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .slider {
+      background-color: var(--black);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    /* Блок статистики */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-val {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-lbl {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .btn-reset-stats {
+      width: 100%;
+      padding: 12px;
+      background: #FFFFFF;
+      border: 1.5px solid var(--danger-border);
+      color: var(--danger);
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      margin-bottom: 24px;
+    }
+
+    /* ========================================================
+       МОДАЛЬНОЕ ОКНО ПРОСМОТРА ЗНАКА
+       ======================================================== */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none;
+      align-items: flex-end;
+      z-index: 100;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-sheet {
+      width: 100%;
+      background: #FFFFFF;
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      padding: 20px 20px max(20px, var(--safe-bottom)) 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      animation: sheetUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    @keyframes sheetUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-sheet-img {
+      max-width: 160px;
+      max-height: 160px;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.08));
+    }
+
+    .modal-close-btn {
+      width: 100%;
+      height: 48px;
+      background: var(--black);
+      color: #FFFFFF;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+
+    /* Сообщение об ошибке загрузки data.js */
+    .error-card {
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      color: #7F1D1D;
+      text-align: center;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app">
+    <!-- Шапка приложения -->
+    <header class="top-header">
+      <div class="app-title" id="page-title">Викторина</div>
+      <div class="quick-stats-badge" id="header-badge">🔥 0 • 0%</div>
+    </header>
+
+    <!-- ========================================================
+         ЭКРАН 1: ВИКТОРИНА
+         ======================================================== -->
+    <section class="screen active" id="quiz-screen">
+      <!-- Переключатель режима: 4 варианта / Карточка -->
+      <div class="quiz-mode-selector">
+        <button class="mode-tab active" id="tab-mode-test">4 варианта</button>
+        <button class="mode-tab" id="tab-mode-flashcard">Карточка</button>
+      </div>
+
+      <!-- Карточка со знаком -->
+      <div class="sign-card">
+        <div class="sign-revealed-id" id="quiz-sign-id">1.1</div>
+        <img src="" alt="Знак ПДД" class="sign-image" id="quiz-img" loading="eager">
+      </div>
+
+      <!-- Блок Режима "4 варианта" -->
+      <div id="test-mode-container">
+        <div class="options-grid" id="options-grid">
+          <!-- 4 кнопки ответов генерируются через JS -->
+        </div>
+        <button class="action-next-btn" id="next-question-btn">
+          Следующий знак →
+        </button>
+      </div>
+
+      <!-- Блок Режима "Карточка" -->
+      <div id="flashcard-mode-container" style="display: none;">
+        <button class="fc-btn fc-btn-reveal" id="fc-btn-show">
+          👁 Показать название
+        </button>
+
+        <div class="flashcard-answer-box" id="fc-answer-box">
+          <div style="font-size: 12px; color: var(--text-muted); font-weight: 700;" id="fc-id-badge">Знак 3.27</div>
+          <div class="flashcard-name" id="fc-name-text">Остановка запрещена</div>
+        </div>
+
+        <div class="flashcard-actions" id="fc-actions" style="display: none;">
+          <button class="fc-btn fc-btn-wrong" id="fc-btn-wrong">✕ Не помню</button>
+          <button class="fc-btn fc-btn-know" id="fc-btn-know">✓ Помню</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         ЭКРАН 2: СПРАВОЧНИК СО ВСЕМИ ЗНАКАМИ
+         ======================================================== -->
+    <section class="screen" id="catalog-screen">
+      <div class="catalog-search-wrap">
+        <div class="search-input-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="catalog-search" class="search-input" placeholder="Поиск (название или номер)..." autocomplete="off" autocapitalize="off">
+          <button class="search-clear-btn" id="search-clear">✕</button>
+        </div>
+        <div class="chips-scroll" id="catalog-chips">
+          <!-- Чипсы категорий генерируются динамически -->
+        </div>
+      </div>
+
+      <div class="signs-list" id="catalog-list">
+        <!-- Список всех знаков генерируется через JS -->
+      </div>
+    </section>
+
+    <!-- ========================================================
+         ЭКРАН 3: ТЕМЫ И СТАТИСТИКА
+         ======================================================== -->
+    <section class="screen" id="settings-screen">
+      <div class="topics-header-actions">
+        <div class="settings-section-title" style="margin: 0;">Темы для изучения</div>
+        <div>
+          <button class="sub-action-btn" id="btn-select-all">Все</button>
+          <span style="color: var(--text-subtle);">|</span>
+          <button class="sub-action-btn" id="btn-deselect-all">Снять</button>
+        </div>
+      </div>
+
+      <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;" id="topics-count-summary">
+        Выбрано знаков: 237 из 237
+      </div>
+
+      <div id="category-toggles-container">
+        <!-- 8 переключателей генерируются через JS -->
+      </div>
+
+      <div class="settings-section-title">Статистика обучения</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-val" id="stat-total">0</div>
+          <div class="stat-lbl">Всего ответов</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color: var(--success);" id="stat-correct">0</div>
+          <div class="stat-lbl">Правильно</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color: var(--danger);" id="stat-wrong">0</div>
+          <div class="stat-lbl">Ошибок</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-rate">0%</div>
+          <div class="stat-lbl">Точность</div>
+        </div>
+      </div>
+
+      <button class="btn-reset-stats" id="btn-reset-stats">Сбросить статистику</button>
+    </section>
+
+    <!-- Модальное окно просмотра знака -->
+    <div class="modal-overlay" id="detail-modal">
+      <div class="modal-sheet">
+        <img src="" alt="" class="modal-sheet-img" id="modal-img">
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;" id="modal-id-cat">1.1 • Предупреждающие</div>
+        <h3 style="font-size: 17px; font-weight: 700; line-height: 1.3; margin-bottom: 12px;" id="modal-name">Название знака</h3>
+        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;" id="modal-user-stats">Встречался: 0 раз | Верно: 0 | Ошибок: 0</div>
+        <button class="modal-close-btn" id="modal-close">Закрыть</button>
+      </div>
+    </div>
+
+    <!-- Нижняя панель навигации -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-screen="quiz-screen">
+        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        <span>Викторина</span>
+      </button>
+      <button class="nav-btn" data-screen="catalog-screen">
+        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+        <span>Справочник</span>
+      </button>
+      <button class="nav-btn" data-screen="settings-screen">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+        <span>Темы и стата</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    /* ========================================================
+       КОНСТАНТЫ И ИНИЦИАЛИЗАЦИЯ ДАННЫХ
+       ======================================================== */
+    const CATEGORIES = {
+      "1": "Предупреждающие знаки",
+      "2": "Знаки приоритета",
+      "3": "Запрещающие знаки",
+      "4": "Предписывающие знаки",
+      "5": "Знаки особых предписаний",
+      "6": "Информационные знаки",
+      "7": "Знаки сервиса",
+      "8": "Знаки дополнительной информации"
+    };
+
+    // Проверка наличия данных из data.js
+    let signsData = [];
+    if (typeof ALL_SIGNS !== 'undefined' && Array.isArray(ALL_SIGNS)) {
+      signsData = ALL_SIGNS;
+    } else if (window.ALL_SIGNS && Array.isArray(window.ALL_SIGNS)) {
+      signsData = window.ALL_SIGNS;
+    }
+
+    // Состояние приложения
+    let state = {
+      activeScreen: 'quiz-screen',
+      quizMode: localStorage.getItem('pdd_quiz_mode') || 'test', // 'test' или 'flashcard'
+      selectedCats: JSON.parse(localStorage.getItem('pdd_selected_cats')) || ['1', '2', '3', '4', '5', '6', '7', '8'],
+      stats: JSON.parse(localStorage.getItem('pdd_stats')) || { total: 0, correct: 0, wrong: 0, streak: 0, maxStreak: 0 },
+      history: JSON.parse(localStorage.getItem('pdd_history')) || {}, // [signId]: { correct: 0, wrong: 0 }
+      catalogFilterCat: 'all',
+      catalogSearchQuery: '',
+      currentQuizSign: null,
+      quizQueue: [],
+      recentSigns: []
+    };
+
+    function saveState() {
+      localStorage.setItem('pdd_selected_cats', JSON.stringify(state.selectedCats));
+      localStorage.setItem('pdd_stats', JSON.stringify(state.stats));
+      localStorage.setItem('pdd_history', JSON.stringify(state.history));
+      localStorage.setItem('pdd_quiz_mode', state.quizMode);
+    }
+
+    /* ========================================================
+       АЛГОРИТМ УМНОЙ ОЧЕРЕДИ ДЛЯ ВИКТОРИНЫ
+       ======================================================== */
+    function getActiveSignsPool() {
+      return signsData.filter(sign => {
+        const cat = sign.id.split('.')[0];
+        return state.selectedCats.includes(cat);
+      });
+    }
+
+    function refillQuizQueue() {
+      const pool = getActiveSignsPool();
+      if (pool.length === 0) {
+        state.quizQueue = [];
+        return;
+      }
+
+      // Приоритезация: знаки с ошибками и неизученные знаки идут первыми
+      const scored = pool.map(sign => {
+        const hist = state.history[sign.id] || { correct: 0, wrong: 0 };
+        let weight = 2;
+        if (hist.correct === 0 && hist.wrong === 0) weight = 5; // новый знак
+        else if (hist.wrong > hist.correct) weight = 6;         // частые ошибки
+        else if (hist.correct >= 3) weight = 1;                 // выученный знак
+        return { sign, sortKey: Math.random() * weight };
+      });
+
+      scored.sort((a, b) => b.sortKey - a.sortKey);
+
+      // Исключаем 4 самых последних показанных знака, чтобы не повторялись подряд
+      const fresh = scored.filter(item => !state.recentSigns.slice(-4).includes(item.sign.id));
+      const recent = scored.filter(item => state.recentSigns.slice(-4).includes(item.sign.id));
+
+      state.quizQueue = [...fresh.map(i => i.sign), ...recent.map(i => i.sign)];
+    }
+
+    function getNextQuestionSign() {
+      if (state.quizQueue.length === 0) {
+        refillQuizQueue();
+      }
+      if (state.quizQueue.length === 0) return null;
+
+      const next = state.quizQueue.shift();
+      state.recentSigns.push(next.id);
+      if (state.recentSigns.length > 12) state.recentSigns.shift();
+      return next;
+    }
+
+    /* ========================================================
+       РЕНДЕР И ЛОГИКА ВИКТОРИНЫ
+       ======================================================== */
+    let isQuestionLocked = false;
+
+    function renderCurrentQuiz() {
+      const pool = getActiveSignsPool();
+      if (pool.length === 0) {
+        document.getElementById('quiz-img').style.display = 'none';
+        document.getElementById('options-grid').innerHTML = `
+          <div class="error-card" style="background:#FFF; border-color:var(--border); color:var(--text);">
+            <p style="font-weight:700; margin-bottom:6px;">Категории не выбраны</p>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Включите хотя бы одну тему во вкладке «Темы и стата»</p>
+          </div>`;
+        return;
+      }
+
+      isQuestionLocked = false;
+      state.currentQuizSign = getNextQuestionSign();
+      if (!state.currentQuizSign) return;
+
+      const sign = state.currentQuizSign;
+      const imgEl = document.getElementById('quiz-img');
+      imgEl.style.display = 'block';
+      imgEl.src = sign.image;
+
+      // Скрываем номер знака до ответа
+      const signIdEl = document.getElementById('quiz-sign-id');
+      signIdEl.style.display = 'none';
+      signIdEl.textContent = sign.id;
+
+      // Скрываем кнопку "Далее"
+      document.getElementById('next-question-btn').style.display = 'none';
+
+      if (state.quizMode === 'test') {
+        renderTestOptions(sign, pool);
+      } else {
+        renderFlashcardUI(sign);
+      }
+      updateHeaderBadge();
+    }
+
+    function renderTestOptions(correctSign, pool) {
+      document.getElementById('test-mode-container').style.display = 'block';
+      document.getElementById('flashcard-mode-container').style.display = 'none';
+
+      // Формируем 3 дистрактора с уникальными названиями
+      let candidates = pool.filter(s => s.name !== correctSign.name);
+      if (candidates.length < 3) {
+        candidates = signsData.filter(s => s.name !== correctSign.name);
+      }
+
+      const uniqueNames = Array.from(new Set(candidates.map(s => s.name)));
+      uniqueNames.sort(() => Math.random() - 0.5);
+      const chosenDistractors = uniqueNames.slice(0, 3);
+
+      const allChoices = [correctSign.name, ...chosenDistractors].sort(() => Math.random() - 0.5);
+      const letters = ['А', 'Б', 'В', 'Г'];
+
+      const grid = document.getElementById('options-grid');
+      grid.innerHTML = '';
+
+      allChoices.forEach((choiceText, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerHTML = `
+          <span class="option-pill">${letters[index]}</span>
+          <span class="option-text">${choiceText}</span>
+        `;
+        btn.onclick = () => handleTestAnswer(btn, choiceText, correctSign);
+        grid.appendChild(btn);
+      });
+    }
+
+    function handleTestAnswer(buttonEl, selectedText, correctSign) {
+      if (isQuestionLocked) return;
+      isQuestionLocked = true;
+
+      const isCorrect = (selectedText === correctSign.name);
+      recordAnswer(correctSign.id, isCorrect);
+
+      // Показываем ID знака после ответа
+      document.getElementById('quiz-sign-id').style.display = 'block';
+
+      const allButtons = document.querySelectorAll('.option-btn');
+      allButtons.forEach(btn => {
+        const text = btn.querySelector('.option-text').textContent;
+        if (text === correctSign.name) {
+          btn.classList.add('correct');
+        }
+      });
+
+      if (isCorrect) {
+        buttonEl.classList.add('correct');
+        if (navigator.vibrate) navigator.vibrate(35);
+        // При правильном ответе даем паузу в 650мс и переходим дальше
+        setTimeout(() => {
+          renderCurrentQuiz();
+        }, 650);
+      } else {
+        buttonEl.classList.add('wrong');
+        if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+        // При ошибке возвращаем знак в скорую очередь (через 3 вопроса)
+        state.quizQueue.splice(Math.min(3, state.quizQueue.length), 0, correctSign);
+        // Показываем кнопку "Дальше"
+        document.getElementById('next-question-btn').style.display = 'flex';
+      }
+    }
+
+    function renderFlashcardUI(sign) {
+      document.getElementById('test-mode-container').style.display = 'none';
+      document.getElementById('flashcard-mode-container').style.display = 'block';
+
+      document.getElementById('fc-btn-show').style.display = 'block';
+      document.getElementById('fc-answer-box').style.display = 'none';
+      document.getElementById('fc-actions').style.display = 'none';
+
+      document.getElementById('fc-id-badge').textContent = `Знак ${sign.id} • ${CATEGORIES[sign.id.split('.')[0]] || ''}`;
+      document.getElementById('fc-name-text').textContent = sign.name;
+    }
+
+    function recordAnswer(signId, isCorrect) {
+      state.stats.total++;
+      if (isCorrect) {
+        state.stats.correct++;
+        state.stats.streak++;
+        if (state.stats.streak > state.stats.maxStreak) {
+          state.stats.maxStreak = state.stats.streak;
+        }
+      } else {
+        state.stats.wrong++;
+        state.stats.streak = 0;
+      }
+
+      if (!state.history[signId]) {
+        state.history[signId] = { correct: 0, wrong: 0 };
+      }
+      if (isCorrect) state.history[signId].correct++;
+      else state.history[signId].wrong++;
+
+      saveState();
+      updateHeaderBadge();
+    }
+
+    function updateHeaderBadge() {
+      const rate = state.stats.total > 0 ? Math.round((state.stats.correct / state.stats.total) * 100) : 0;
+      document.getElementById('header-badge').textContent = `🔥 ${state.stats.streak} • ${rate}%`;
+    }
+
+    /* ========================================================
+       ЭКРАН 2: СПРАВОЧНИК
+       ======================================================== */
+    function initCatalog() {
+      renderCategoryChips();
+      renderCatalogList();
+    }
+
+    function renderCategoryChips() {
+      const chipsBox = document.getElementById('catalog-chips');
+      chipsBox.innerHTML = '';
+
+      const allBtn = document.createElement('button');
+      allBtn.className = `chip-btn ${state.catalogFilterCat === 'all' ? 'active' : ''}`;
+      allBtn.textContent = `Все (${signsData.length})`;
+      allBtn.onclick = () => {
+        state.catalogFilterCat = 'all';
+        renderCategoryChips();
+        renderCatalogList();
+      };
+      chipsBox.appendChild(allBtn);
+
+      Object.entries(CATEGORIES).forEach(([catId, catName]) => {
+        const count = signsData.filter(s => s.id.split('.')[0] === catId).length;
+        const btn = document.createElement('button');
+        btn.className = `chip-btn ${state.catalogFilterCat === catId ? 'active' : ''}`;
+        btn.textContent = `${catId}. ${catName} (${count})`;
+        btn.onclick = () => {
+          state.catalogFilterCat = catId;
+          renderCategoryChips();
+          renderCatalogList();
+        };
+        chipsBox.appendChild(btn);
+      });
+    }
+
+    function renderCatalogList() {
+      const listContainer = document.getElementById('catalog-list');
+      const q = state.catalogSearchQuery.toLowerCase().trim();
+
+      const filtered = signsData.filter(s => {
+        const matchesCat = (state.catalogFilterCat === 'all') || (s.id.split('.')[0] === state.catalogFilterCat);
+        const matchesQuery = !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q);
+        return matchesCat && matchesQuery;
+      });
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `
+          <div style="text-align: center; padding: 40px 10px; color: var(--text-muted);">
+            Ничего не найдено
+          </div>`;
+        return;
+      }
+
+      listContainer.innerHTML = '';
+      filtered.forEach(sign => {
+        const item = document.createElement('div');
+        item.className = 'sign-list-item';
+        item.onclick = () => openSignModal(sign);
+
+        item.innerHTML = `
+          <div class="sign-thumb-box">
+            <img src="${sign.image}" alt="${sign.name}" class="sign-thumb" loading="lazy">
+          </div>
+          <div class="sign-info-box">
+            <div class="sign-info-top">
+              <span class="sign-badge">${sign.id}</span>
+            </div>
+            <div class="sign-name-text">${sign.name}</div>
+          </div>
+        `;
+        listContainer.appendChild(item);
+      });
+    }
+
+    function openSignModal(sign) {
+      const modal = document.getElementById('detail-modal');
+      document.getElementById('modal-img').src = sign.image;
+      const catName = CATEGORIES[sign.id.split('.')[0]] || '';
+      document.getElementById('modal-id-cat').textContent = `${sign.id} • ${catName}`;
+      document.getElementById('modal-name').textContent = sign.name;
+
+      const hist = state.history[sign.id] || { correct: 0, wrong: 0 };
+      const total = hist.correct + hist.wrong;
+      document.getElementById('modal-user-stats').textContent = 
+        `Ответов: ${total} | Верно: ${hist.correct} | Ошибок: ${hist.wrong}`;
+
+      modal.classList.add('active');
+    }
+
+    /* ========================================================
+       ЭКРАН 3: ТЕМЫ И СТАТИСТИКА
+       ======================================================== */
+    function initSettingsScreen() {
+      const container = document.getElementById('category-toggles-container');
+      container.innerHTML = '';
+
+      Object.entries(CATEGORIES).forEach(([catId, catName]) => {
+        const count = signsData.filter(s => s.id.split('.')[0] === catId).length;
+        const isChecked = state.selectedCats.includes(catId);
+
+        const row = document.createElement('div');
+        row.className = 'category-toggle-item';
+        row.innerHTML = `
+          <div>
+            <div class="category-title">${catId}. ${catName}</div>
+            <div class="category-count">${count} знаков</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-cat="${catId}" ${isChecked ? 'checked' : ''}>
+            <span class="slider"></span>
+          </label>
+        `;
+
+        const checkbox = row.querySelector('input');
+        checkbox.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            if (!state.selectedCats.includes(catId)) state.selectedCats.push(catId);
+          } else {
+            state.selectedCats = state.selectedCats.filter(c => c !== catId);
+          }
+          saveState();
+          updateTopicsSummary();
+          refillQuizQueue();
+        });
+
+        container.appendChild(row);
+      });
+
+      updateTopicsSummary();
+      renderStatsDashboard();
+    }
+
+    function updateTopicsSummary() {
+      const activeCount = getActiveSignsPool().length;
+      document.getElementById('topics-count-summary').textContent = 
+        `Выбрано знаков для викторины: ${activeCount} из ${signsData.length}`;
+    }
+
+    function renderStatsDashboard() {
+      document.getElementById('stat-total').textContent = state.stats.total;
+      document.getElementById('stat-correct').textContent = state.stats.correct;
+      document.getElementById('stat-wrong').textContent = state.stats.wrong;
+      const rate = state.stats.total > 0 ? Math.round((state.stats.correct / state.stats.total) * 100) : 0;
+      document.getElementById('stat-rate').textContent = `${rate}%`;
+    }
+
+    /* ========================================================
+       СЛУШАТЕЛИ СОБЫТИЙ И НАВИГАЦИЯ
+       ======================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      if (signsData.length === 0) {
+        document.getElementById('app').innerHTML = `
+          <div style="padding: 24px; text-align: center;">
+            <div class="error-card">
+              <h2 style="margin-bottom: 8px;">Файл data.js не найден!</h2>
+              <p style="font-size: 14px; line-height: 1.4;">
+                Поместите файл <code>data.js</code> с массивом <code>ALL_SIGNS</code> в одну папку с этим файлом <code>index.html</code> и обновите страницу.
+              </p>
+            </div>
+          </div>`;
+        return;
+      }
+
+      // Переключение табов нижней навигации
+      const navButtons = document.querySelectorAll('.nav-btn');
+      navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          navButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          const targetScreenId = btn.dataset.screen;
+          document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+          document.getElementById(targetScreenId).classList.add('active');
+
+          // Заголовок в шапке
+          const titles = {
+            'quiz-screen': 'Викторина',
+            'catalog-screen': 'Справочник знаков',
+            'settings-screen': 'Темы и статистика'
+          };
+          document.getElementById('page-title').textContent = titles[targetScreenId] || 'ПДД Знаки';
+
+          if (targetScreenId === 'settings-screen') renderStatsDashboard();
+        });
+      });
+
+      // Переключатель режима викторины (Тест / Карточка)
+      const tabModeTest = document.getElementById('tab-mode-test');
+      const tabModeFc = document.getElementById('tab-mode-flashcard');
+
+      tabModeTest.addEventListener('click', () => {
+        state.quizMode = 'test';
+        tabModeTest.classList.add('active');
+        tabModeFc.classList.remove('active');
+        saveState();
+        renderCurrentQuiz();
+      });
+
+      tabModeFc.addEventListener('click', () => {
+        state.quizMode = 'flashcard';
+        tabModeFc.classList.add('active');
+        tabModeTest.classList.remove('active');
+        saveState();
+        renderCurrentQuiz();
+      });
+
+      if (state.quizMode === 'flashcard') {
+        tabModeFc.classList.add('active');
+        tabModeTest.classList.remove('active');
+      }
+
+      // Кнопка "Следующий знак" в тесте
+      document.getElementById('next-question-btn').addEventListener('click', () => {
+        renderCurrentQuiz();
+      });
+
+      // Карточки: Показать ответ
+      document.getElementById('fc-btn-show').addEventListener('click', () => {
+        document.getElementById('fc-btn-show').style.display = 'none';
+        document.getElementById('fc-answer-box').style.display = 'block';
+        document.getElementById('fc-actions').style.display = 'flex';
+        document.getElementById('quiz-sign-id').style.display = 'block';
+      });
+
+      // Карточки: Не знаю
+      document.getElementById('fc-btn-wrong').addEventListener('click', () => {
+        if (!state.currentQuizSign) return;
+        recordAnswer(state.currentQuizSign.id, false);
+        state.quizQueue.splice(Math.min(3, state.quizQueue.length), 0, state.currentQuizSign);
+        renderCurrentQuiz();
+      });
+
+      // Карточки: Знаю
+      document.getElementById('fc-btn-know').addEventListener('click', () => {
+        if (!state.currentQuizSign) return;
+        recordAnswer(state.currentQuizSign.id, true);
+        renderCurrentQuiz();
+      });
+
+      // Поиск по каталогу
+      const searchInput = document.getElementById('catalog-search');
+      const searchClear = document.getElementById('search-clear');
+
+      searchInput.addEventListener('input', (e) => {
+        state.catalogSearchQuery = e.target.value;
+        searchClear.style.display = e.target.value ? 'block' : 'none';
+        renderCatalogList();
+      });
+
+      searchClear.addEventListener('click', () => {
+        searchInput.value = '';
+        state.catalogSearchQuery = '';
+        searchClear.style.display = 'none';
+        renderCatalogList();
+        searchInput.focus();
+      });
+
+      // Кнопки "Выбрать все" / "Снять все"
+      document.getElementById('btn-select-all').addEventListener('click', () => {
+        state.selectedCats = ['1', '2', '3', '4', '5', '6', '7', '8'];
+        saveState();
+        initSettingsScreen();
+        refillQuizQueue();
+      });
+
+      document.getElementById('btn-deselect-all').addEventListener('click', () => {
+        state.selectedCats = [];
+        saveState();
+        initSettingsScreen();
+        refillQuizQueue();
+      });
+
+      // Сброс статистики
+      document.getElementById('btn-reset-stats').addEventListener('click', () => {
+        if (confirm('Сбросить всю накопленную статистику ответов?')) {
+          state.stats = { total: 0, correct: 0, wrong: 0, streak: 0, maxStreak: 0 };
+          state.history = {};
+          saveState();
+          renderStatsDashboard();
+          updateHeaderBadge();
+        }
+      });
+
+      // Закрытие модального окна
+      const modal = document.getElementById('detail-modal');
+      document.getElementById('modal-close').addEventListener('click', () => {
+        modal.classList.remove('active');
+      });
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('active');
+      });
+
+      // Запуск
+      initCatalog();
+      initSettingsScreen();
+      renderCurrentQuiz();
+    });
+  </script>
+</body>
+</html>
